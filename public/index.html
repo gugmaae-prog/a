@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GIS Full-Stack Page</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+
+      header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #334155;
+      }
+
+      main {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        padding: 1rem 1.5rem 1.5rem;
+      }
+
+      .panel {
+        background: #111827;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 1rem;
+      }
+
+      .map-panel {
+        grid-column: span 2;
+      }
+
+      #map {
+        height: 420px;
+        border-radius: 8px;
+      }
+
+      form {
+        display: grid;
+        gap: 0.65rem;
+      }
+
+      label {
+        display: grid;
+        gap: 0.35rem;
+        font-size: 0.92rem;
+      }
+
+      input,
+      textarea,
+      button {
+        padding: 0.55rem 0.65rem;
+        border-radius: 7px;
+        border: 1px solid #475569;
+        font: inherit;
+      }
+
+      button {
+        border: none;
+        cursor: pointer;
+        color: #f8fafc;
+        background: #2563eb;
+        font-weight: 600;
+      }
+
+      #locationList {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      #locationList li {
+        border: 1px solid #334155;
+        border-radius: 7px;
+        padding: 0.55rem;
+        background: #0b1220;
+      }
+
+      #status {
+        margin: 0.5rem 0 0;
+        min-height: 1rem;
+        color: #93c5fd;
+      }
+
+      @media (max-width: 960px) {
+        .map-panel {
+          grid-column: span 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>GIS Project Dashboard</h1>
+      <p>Interactive map + backend API for location management.</p>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>Add Location</h2>
+        <form id="locationForm">
+          <label>
+            Name
+            <input type="text" id="name" required />
+          </label>
+          <label>
+            Type
+            <input type="text" id="type" placeholder="City, Park, Site..." />
+          </label>
+          <label>
+            Latitude
+            <input type="number" step="any" id="lat" required />
+          </label>
+          <label>
+            Longitude
+            <input type="number" step="any" id="lng" required />
+          </label>
+          <label>
+            Note
+            <textarea id="note" rows="2" placeholder="Optional notes"></textarea>
+          </label>
+          <button type="submit">Save Location</button>
+        </form>
+        <p id="status"></p>
+      </section>
+
+      <section class="panel map-panel">
+        <h2>Map View</h2>
+        <div id="map"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Location List</h2>
+        <ul id="locationList"></ul>
+      </section>
+    </main>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script>
+      const map = L.map('map').setView([39.8283, -98.5795], 4);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      const markerLayer = L.layerGroup().addTo(map);
+      const listEl = document.getElementById('locationList');
+      const formEl = document.getElementById('locationForm');
+      const statusEl = document.getElementById('status');
+
+      async function loadLocations() {
+        const response = await fetch('/api/locations');
+        const payload = await response.json();
+        renderLocations(payload.data || []);
+      }
+
+      function renderLocations(locations) {
+        markerLayer.clearLayers();
+        listEl.innerHTML = '';
+
+        const bounds = [];
+
+        locations.forEach((location) => {
+          const marker = L.marker([location.lat, location.lng]).addTo(markerLayer);
+          marker.bindPopup(
+            `<b>${location.name}</b><br/>${location.type || 'Unknown'}<br/>${location.note || ''}`
+          );
+
+          const item = document.createElement('li');
+          item.innerHTML = `<strong>${location.name}</strong> (${location.type || 'Unknown'})<br/>${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`;
+          listEl.appendChild(item);
+
+          bounds.push([location.lat, location.lng]);
+        });
+
+        if (bounds.length) {
+          map.fitBounds(bounds, { padding: [30, 30] });
+        }
+      }
+
+      formEl.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        statusEl.textContent = 'Saving...';
+
+        const body = {
+          name: document.getElementById('name').value.trim(),
+          type: document.getElementById('type').value.trim(),
+          lat: Number(document.getElementById('lat').value),
+          lng: Number(document.getElementById('lng').value),
+          note: document.getElementById('note').value.trim()
+        };
+
+        try {
+          const response = await fetch('/api/locations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to save location');
+          }
+
+          formEl.reset();
+          statusEl.textContent = 'Location saved.';
+          await loadLocations();
+        } catch (error) {
+          statusEl.textContent = error.message;
+        }
+      });
+
+      loadLocations().catch(() => {
+        statusEl.textContent = 'Unable to load locations.';
+      });
+    </script>
+  </body>
+</html>

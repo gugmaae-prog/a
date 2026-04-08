@@ -1,0 +1,93 @@
+:root {
+  color-scheme: light dark;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #334155;
+}
+
+main {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.panel {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.map-panel {
+  grid-column: span 2;
+}
+
+#map {
+  height: 420px;
+  border-radius: 8px;
+}
+
+form {
+  display: grid;
+  gap: 0.65rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+}
+
+input,
+textarea,
+button {
+  padding: 0.55rem 0.65rem;
+  border-radius: 7px;
+  border: 1px solid #475569;
+  font: inherit;
+}
+
+button {
+  border: none;
+  cursor: pointer;
+  color: #f8fafc;
+  background: #2563eb;
+  font-weight: 600;
+}
+
+#locationList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+#locationList li {
+  border: 1px solid #334155;
+  border-radius: 7px;
+  padding: 0.55rem;
+  background: #0b1220;
+}
+
+#status {
+  margin: 0.5rem 0 0;
+  min-height: 1rem;
+  color: #93c5fd;
+}
+
+@media (max-width: 960px) {
+  .map-panel {
+    grid-column: span 1;
+  }
+}
