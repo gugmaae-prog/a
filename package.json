@@ -1,0 +1,14 @@
+{
+  "name": "gis-fullstack-page",
+  "version": "1.0.0",
+  "description": "Full-stack GIS demo page with Express + Leaflet",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --check server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
